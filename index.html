@@ -74,19 +74,20 @@
     let countdownInterval;
 
     function updateCountdown() {
-      const now = new Date().getTime();
+      const now = Date.now();
       const distance = endTime - now;
 
       if (distance <= 0) {
         clearInterval(countdownInterval);
         countdownElement.innerHTML = "00:00:00";
+        localStorage.removeItem("countdownEnd");
         showFireworks();
         return;
       }
 
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+      const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((distance / (1000 * 60)) % 60);
+      const seconds = Math.floor((distance / 1000) % 60);
 
       countdownElement.innerHTML =
         String(hours).padStart(2, '0') + ":" +
@@ -95,17 +96,24 @@
     }
 
     function startCountdown() {
-      endTime = new Date().getTime() + 24 * 60 * 60 * 1000;
+      endTime = Date.now() + 24 * 60 * 60 * 1000;
       localStorage.setItem("countdownEnd", endTime);
       startBtn.classList.add("hidden");
       countdownInterval = setInterval(updateCountdown, 1000);
       updateCountdown();
     }
 
+    // PREVENT false triggers on expired timers
     if (endTime) {
-      startBtn.classList.add("hidden");
-      countdownInterval = setInterval(updateCountdown, 1000);
-      updateCountdown();
+      const now = Date.now();
+      if (now >= endTime) {
+        localStorage.removeItem("countdownEnd");
+        endTime = null;
+      } else {
+        startBtn.classList.add("hidden");
+        countdownInterval = setInterval(updateCountdown, 1000);
+        updateCountdown();
+      }
     }
 
     startBtn.addEventListener("click", startCountdown);
